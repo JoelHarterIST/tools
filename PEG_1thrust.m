@@ -153,7 +153,7 @@ end
 %% Perform Calculations
 
 % UPDATE <ref1 p577>
-D_V_=D_V_-DeltaV_S_;% [m/s] <ref1 p570>
+D_V_=D_V_-DeltaV_S_;% [m/s]
 
 % Guidance Loop
 i_corr=0;% iteration counter
