@@ -157,14 +157,14 @@ D_V_=D_V_-DeltaV_S_;% [m/s]
 
 % Guidance Loop
 i_corr=0;% iteration counter
-while i_corr<i_corr_min || (initialize && i_corr==1) ||(i_corr<=i_corr_max && norm(V_miss_)>epsilon_V*norm(D_V_))
+while i_corr<i_corr_min || (initialize && i_corr==1) ||(i_corr<=i_corr_max && norm(V_miss_)>epsilon_V*norm(D_V_))% <convergence test: ref1 p68>
     if ~(initialize && i_corr == 0)% skip to corrector before performing full first full predictor-corrector loop on first call
 
 
         % TIME-T0-GO <ref1 p577>
 
         D_V = norm(D_V_);% <ref1 p577>
-        L = D_V;% [m/s] <ref1 p571>
+        L = D_V;% [m/s] <ref1 p570,571>
         tau = V_ex/a_thrust;% [s] ratio of current mass to mass flow rate. function of time. <ref1 p570>
         T_B = tau*(1-exp(-L/V_ex));% [s] burn time <ref1 p571>
         T_GO = T_B;% [s] time-to-go <ref1 p571>
@@ -237,7 +237,7 @@ while i_corr<i_corr_min || (initialize && i_corr==1) ||(i_corr<=i_corr_max && no
     U_z_ = cross(U_x_,U_y_);% [unitless] unit vector down range <ref1 p576 eq64>
 
     V_D_ = V_D*(U_x_*sind(gamma_D) + U_z_*cosd(gamma_D));% [m/s] desired velocity vector <ref1 p576 eq64>
-    V_miss_ = V_D_ - V_p_;% [m/s] V_D_ error term <ref1 p576 eq65>
+    V_miss_ = V_D_ - V_p_;% [m/s] V_D_ error term <ref1 p576 eq65 (note: reference contains typo)>
     D_V_ = D_V_ + V_miss_;% [m/s] correct D_V_ <ref1 p576 eq65>
     lambda_V_ = uvec(D_V_);% [unitless] <ref1 p576>
     F_V = (dot(lambda_V_,V_D_-V_)/dot(lambda_,V_p_-V_))-1;% [unitless] <ref1 p576 eq66>
@@ -253,10 +253,10 @@ if i_corr_min<i_corr && i_corr==i_corr_max
     warning('Maximum number of predictor-corrector loop iterations reached')
 end
 if initialize
-    i_corr_max = i_corr_max_update;% set the correction loop to run fewer times after initial convergence at first timestep <ref1 p572> (reference recomments i_corr_max_update=1)
+    i_corr_max = i_corr_max_update;% set the correction loop to run fewer times after initial convergence at first timestep <ref1 p575> (reference recomments i_corr_max_update=1)
 end
 if T_GO<T_GO_min
-    warning(['Guidance called within ',num2str(T_GO_min),' s of burnout. Solution may be unstable.'])
+    warning(['Guidance called within ',num2str(T_GO_min),' s of burnout. Solution may be unstable.'])% <ref1 p577>
 end
 
 % Compute steering command variables
@@ -266,7 +266,7 @@ S_T = dot(lambda_,R_GO_);% [m] <ref1 p570>
 R_GO_ = R_GO_ + (S_T - dot(lambda_,R_GO_))*lambda_;% [m] <ref1 p570 eq26>
 lambda_dot_ = (R_GO_ - S_T*lambda_)/Q_T;% [s^-1] <ref1 p570 eq27>
 lambda_dot = norm(lambda_dot_);% [s^-1]  store magnitude of lambda_dot_ vector
-Pfun=@(t)lambda_.*cos(lambda_dot.*(t-K))+lambda_dot_/lambda_dot.*sin(lambda_dot.*(t-K));
+Pfun=@(t)lambda_.*cos(lambda_dot.*(t-K))+lambda_dot_/lambda_dot.*sin(lambda_dot.*(t-K));% <ref1 p569 eq15>
 
 %% Prepare Output
 
