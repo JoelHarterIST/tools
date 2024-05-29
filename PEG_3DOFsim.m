@@ -24,6 +24,7 @@ end
 
 dt_g=s.dt_g;
 dt_c=s.dt_c;
+k_gc=round(dt_g/dt_c);
 mu=Constants.mu;% [m^3/s^2] earth's gravitational constant
 g_0=Constants.g_0;
 m_dot = -F_T/g_0/I_sp;
@@ -35,7 +36,7 @@ if nargout<4
     storeHistory = false;
 else
     storeHistory = true;
-    History=(0:floor(-m_0/m_dot/dt_c))';
+    History=(0:floor(-m_0/m_dot/dt_c))'*dt_c;
     i_history=1;
     History(i_history,2:7)=[r_,v_];% record current state in history
 end
@@ -44,8 +45,6 @@ end
 
 r=norm(r_);
 a_T = F_T/m_0;% initialize
-a_ = a_T*uvec(v_)-mu*r_/r^3;% assumed initial value of acceleration vector
-dt_ge = dt_g;
 t=0;
 finalGuidance=false;
 finalControl=false;
@@ -63,20 +62,25 @@ for i_g=(0:tau/dt_g)
             DeltaV_thrust_=Deltav_T_);
     end
     if T_GO-dt_g<PEGdata.T_GO_min% if getting too close to T_GO, don't call guidance anymore
-        dt_ge = T_GO;
+        k_gc=ceil(T_GO/dt_c);
         finalGuidance=true;
     end
     Deltav_T_=zeros(1,3);% [m/s] reset change in velocity due to thrust since last guidance call
     t_c = 0;% [s] reset seconds since last guidance call
-    for i_c=(1:round(dt_ge/dt_c)+1)
+    for i_c=(1:k_gc)
         if finalGuidance && t_c+dt_c>T_GO
             dt_c = T_GO-t_c;
             finalControl=true;
         end
+        a_G_=-mu*r_/r^3;% [m/s^2] acceleration due to gravity
+        if i_g==0&&i_c==1
+            F_T_=F_T*P_(0);
+            History(i_history,8:10)=F_T_;% record initial thrust in history
+            a_ = F_T_/m_0-mu*r_/r^3;% initial value of acceleration vector
+        end
         t_c=t_c+dt_c;% [s] increment control loop time
         t=t_g+t_c;% [s] current timestamp
         a_old_=a_;% [m/s^2] store old acceleration vector
-        a_G_=-mu*r_/r^3;% [m/s^2] acceleration due to gravity
         F_T_=F_T*P_(t_c);% [N] thrust vector
         a_T_=F_T_/m(t);% [m/s^2] acceleration due to thrust
         a_=a_G_+a_T_;% [m/s^2] total acceleration
