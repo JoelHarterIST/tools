@@ -1,4 +1,4 @@
-function [r_,v_,t,stateHistory]=PEG_3DOFsim(r_,v_,m_0,F_T,I_sp,r_D,i_D,s)
+function [r_,v_,t,History]=PEG_3DOFsim(r_,v_,m_0,F_T,I_sp,r_D,i_D,s)
 % Given a rocket's initial conditions, use Powered Explicit Guidance (PEG) to guide it into orbit in a 3-degree-of-freedom simulation
 %
 % Joel T Harter
@@ -19,7 +19,7 @@ arguments (Output)
     r_              (1,3)   double          % [m, ECI] orbit insertion position
     v_              (1,3)   double          % [m/s, ECI] velocity at orbit insertion
     t               (1,1)   double          % [s] time of orbit insertion
-    stateHistory    (:,7)   double          % [s,  m,m,m  m/s,m/s,m/s] a list of historic data, each row containing an entry of [time, ECI position [x,y,z], ECI velocity [x,y,z]]
+    History         (:,10)  double          % [s,  m,m,m,  m/s,m/s,m/s,  N,N,N] a list of historic data, each row containing an entry of [time, position, velocity, thrust] in ECI coordinates
 end
 
 dt_g=s.dt_g;
@@ -35,9 +35,9 @@ if nargout<4
     storeHistory = false;
 else
     storeHistory = true;
-    stateHistory=(0:floor(-m_0/m_dot/dt_c))';
+    History=(0:floor(-m_0/m_dot/dt_c))';
     i_history=1;
-    stateHistory(i_history,2:7)=[r_,v_];% record current state in history
+    History(i_history,2:7)=[r_,v_];% record current state in history
 end
 
 %% 3DOF sim
@@ -73,22 +73,23 @@ for i_g=(0:tau/dt_g)
             dt_c = T_GO-t_c;
             finalControl=true;
         end
-        t_c=t_c+dt_c;
-        t=t_g+t_c;% current timestamp
-        a_old_=a_;% store old acceleration vector
-        a_G_=-mu*r_/r^3;% acceleration due to gravity
-        a_T_=F_T*P_(t_c)/m(t);% acceleration due to thrust
-        a_=a_G_+a_T_;% total acceleration
-        v_old_=v_;% store old velocity
-        v_=v_+(a_+a_old_)/2*dt_c;% new velocity
-        r_=r_+(v_+v_old_)/2*dt_c;% new position
+        t_c=t_c+dt_c;% [s] increment control loop time
+        t=t_g+t_c;% [s] current timestamp
+        a_old_=a_;% [m/s^2] store old acceleration vector
+        a_G_=-mu*r_/r^3;% [m/s^2] acceleration due to gravity
+        F_T_=F_T*P_(t_c);% [N] thrust vector
+        a_T_=F_T_/m(t);% [m/s^2] acceleration due to thrust
+        a_=a_G_+a_T_;% [m/s^2] total acceleration
+        v_old_=v_;% [m/s] store old velocity
+        v_=v_+(a_+a_old_)/2*dt_c;% [m/s] new velocity
+        r_=r_+(v_+v_old_)/2*dt_c;% [m] new position
         if storeHistory
             i_history=i_history+1;
-            stateHistory(i_history,2:7)=[r_,v_];% record current state in history
+            History(i_history,2:10)=[r_,v_,F_T_];% record current state in history
         end
         if finalControl
             if storeHistory
-                stateHistory(i_history,1)=t;% record final time
+                History(i_history,1)=t;% record final time
             end
             break
         end
@@ -103,7 +104,7 @@ end
 
 t=i_g*dt_g+i_c*dt_c;% [s] final time
 if storeHistory
-    stateHistory(i_history+1:end,:)=[];% cut off unused allocated space
+    History(i_history+1:end,:)=[];% cut off unused allocated space
 end
 
 
