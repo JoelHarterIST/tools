@@ -19,12 +19,16 @@ classdef Constants
         R1 = 6.371008771415059e6;% [m] arithmetic mean mean radius :=(2*a_e+b_e)/3
         R2 = 6.371007180918474e6;% [m] authalic (sphere with equal area) radius :=sqrt(a_e^2/2+b_e^2/2*atanh(e)/e) | e:=sqrt((a_e^2-b_e^2)/a_e^2)
         R3 = 6.371000790009154e6;% [m] volumetric (sphere with equal volume) radius :=(a_e^2*b_e)^(1/3)
-        mu = 3.986004418e14;% [m^3·s^-2] earth's gravitational constant, including mass of atmosphere :=G*M_e; This value was defined by <WGS-84> independently of G or M_e since it can be measured more directly
         Omega = 7.2921151467e-5;% [rad·s^-1] earth's angular speed. This is the value used by Interstellar Technologies; WGS-84 specifies this value should be 72.92115e-6 rad/s (less precise);
+        tilt=23.439281;% [deg] earth's axial tilt (obliquity of ecliptic)
+        mu = 3.986004418e14;% [m^3·s^-2] earth's gravitational constant, including mass of atmosphere :=G*M_e; This value was defined by <WGS-84> independently of G or M_e since it can be measured more directly
         g_0 = 9.80665;% [m·s^-2] standard acceleration of gravity set by ISO 80000 (international standard)
         M = 5.972168494074286e24;% [kg] earth mass; NOTE: current best estimate of earth's mass is (5.9722±0.0006)*10^24 kg. The more precise value assigned to M_e is obtained from mu_e/G to keep things consistent; the significant digits do not imply higher accuracy.
         tropicalYear = 3.1556925216e7;% [s] tropical year, the length of time it takes the earth to go from one vernal equinox to the next
         siderialYear = 3.15581497635456e7;% [s] siderial year, the length of time it takes the sun to return to the same relative position with respect to the fixed stars, taking the earth's axial precession into account
-
+        
+        % Colors
+        hex2frac_color=@(hex)sum(reshape(mod(lower(char(hex))-48,39),2,3).*[16;1],1)/255;% convert hex color triplets like 'ff0000' to 1×3 fractional color vectors
+        orange=[1, 0.458823529411765, 0];% #ff7500 official Interstellar orange
     end
 end
